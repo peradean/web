@@ -1,27 +1,125 @@
-<style>
-  body {
-    background:  #B5651D  ;
-    color: #111 ;
-    font-family: serif ;
-    font-size: 1.5em ;
-    padding: 2em;
-    
-  }
-</style>
-
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Currency Converter</title>
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+        }
+        input[type="text"] {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14px;
+            padding: 5px;
+            width: 200px;
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
 <body>
-<h1>
-  Because of Winn-Dixie
-  </h1>
-  
-  <p>
-    
-    CHAPTER 3:
-    <br>
-     <audio controls>
-   <source src="C3.ogg" type="audio/ogg">
-</audio>  
-  
-  <p>
-    
+    <div class="container">
+        <p>Enter the name of a country or an emoji flag</p>
+        <input type="text" id="countryInput" list="countryList" placeholder="Type country or flag">
+        <datalist id="countryList"></datalist>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Basic country data with currency codes
+        const countries = {
+            'united states': { code: 'USD', flag: '🇺🇸' },
+            'japan': { code: 'JPY', flag: '🇯🇵' },
+            'united kingdom': { code: 'GBP', flag: '🇬🇧' },
+            'canada': { code: 'CAD', flag: '🇨🇦' },
+            'australia': { code: 'AUD', flag: '🇦🇺' },
+            'eurozone': { code: 'EUR', flag: '🇪🇺' },
+            '🇺🇸': { code: 'USD', name: 'United States' },
+            '🇯🇵': { code: 'JPY', name: 'Japan' },
+            '🇬🇧': { code: 'GBP', name: 'United Kingdom' },
+            '🇨🇦': { code: 'CAD', name: 'Canada' },
+            '🇦🇺': { code: 'AUD', name: 'Australia' },
+            '🇪🇺': { code: 'EUR', name: 'Eurozone' }
+        };
+
+        const countryInput = document.getElementById('countryInput');
+        const countryList = document.getElementById('countryList');
+        const resultsDiv = document.getElementById('results');
+
+        // Populate datalist with country names and flags
+        Object.entries(countries).forEach(([key, value]) => {
+            if (!key.startsWith('�')) {
+                const option = document.createElement('option');
+                option.value = `${key} ${value.flag}`;
+                countryList.appendChild(option);
+            }
+        });
+
+        // Handle input and submission
+        countryInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                await convertCurrency();
+            }
+        });
+
+        async function convertCurrency() {
+            let input = countryInput.value.toLowerCase().trim();
+            let countryCode, countryName;
+
+            // Extract flag if present
+            const flagMatch = input.match(/�[a-z]{2}/);
+            if (flagMatch) {
+                input = flagMatch[0];
+            }
+
+            // Find matching country
+            const country = countries[input] || 
+                Object.entries(countries).find(([key, value]) => 
+                    key.toLowerCase().includes(input.split(' ')[0])
+                )?.[1];
+
+            if (!country) {
+                resultsDiv.innerHTML = 'Country not found. Try again.';
+                return;
+            }
+
+            countryCode = country.code;
+            countryName = country.name || input;
+
+            try {
+                // Using a free exchange rate API (replace with actual API key if needed)
+                const response = await fetch(
+                    `https://api.exchangerate-api.com/v4/latest/USD`
+                );
+                const data = await response.json();
+                const rate = data.rates[countryCode];
+
+                if (rate) {
+                    resultsDiv.innerHTML = `
+                        Country: ${countryName} ${country.flag || ''}<br>
+                        Currency: ${countryCode}<br>
+                        1 USD = ${rate.toFixed(2)} ${countryCode}
+                    `;
+                } else {
+                    resultsDiv.innerHTML = 'Currency data not available.';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = 'Error fetching exchange rate.';
+            }
+        }
+    </script>
+</body>
+</html>
